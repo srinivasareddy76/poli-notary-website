@@ -20,24 +20,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Variables
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "project_name" {
-  description = "Project name"
-  type        = string
-  default     = "poli-notary"
-}
-
-variable "environment" {
-  description = "Environment"
-  type        = string
-  default     = "prod"
-}
+# Variables are defined in variables.tf
 
 # S3 Bucket for static assets (images, CSS, JS)
 resource "aws_s3_bucket" "static_assets" {
@@ -107,8 +90,9 @@ resource "aws_dynamodb_table" "contact_submissions" {
   }
 
   global_secondary_index {
-    name     = "timestamp-index"
-    hash_key = "timestamp"
+    name            = "timestamp-index"
+    hash_key        = "timestamp"
+    projection_type = "ALL"
   }
 
   tags = {
@@ -501,29 +485,5 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
   comment = "OAI for ${var.project_name}"
 }
 
-# Outputs
-output "website_url" {
-  description = "Website URL"
-  value       = "https://${aws_cloudfront_distribution.poli_notary_cdn.domain_name}"
-}
-
-output "api_gateway_url" {
-  description = "API Gateway URL"
-  value       = "https://${aws_api_gateway_rest_api.poli_notary_api.id}.execute-api.${var.aws_region}.amazonaws.com/${var.environment}"
-}
-
-output "s3_bucket_name" {
-  description = "S3 bucket name for static assets"
-  value       = aws_s3_bucket.static_assets.bucket
-}
-
-output "cloudfront_distribution_id" {
-  description = "CloudFront distribution ID"
-  value       = aws_cloudfront_distribution.poli_notary_cdn.id
-}
-
-output "dynamodb_table_name" {
-  description = "DynamoDB table name"
-  value       = aws_dynamodb_table.contact_submissions.name
-}
+# Outputs are defined in outputs.tf
 
