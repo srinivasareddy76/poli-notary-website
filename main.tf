@@ -33,6 +33,12 @@ resource "random_string" "bucket_suffix" {
   upper   = false
 }
 
+resource "random_string" "resource_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
 resource "aws_s3_bucket_public_access_block" "static_assets" {
   bucket = aws_s3_bucket.static_assets.id
 
@@ -75,7 +81,7 @@ resource "aws_s3_bucket_website_configuration" "static_assets" {
 
 # DynamoDB table for storing contact form submissions
 resource "aws_dynamodb_table" "contact_submissions" {
-  name           = "${var.project_name}-contact-submissions"
+  name           = "${var.project_name}-contact-submissions-${random_string.resource_suffix.result}"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "id"
 
@@ -103,7 +109,7 @@ resource "aws_dynamodb_table" "contact_submissions" {
 
 # IAM role for Lambda functions
 resource "aws_iam_role" "lambda_role" {
-  name = "${var.project_name}-lambda-role"
+  name = "${var.project_name}-lambda-role-${random_string.resource_suffix.result}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -117,10 +123,16 @@ resource "aws_iam_role" "lambda_role" {
       }
     ]
   })
+
+  tags = {
+    Name        = "${var.project_name}-lambda-role"
+    Environment = var.environment
+    Project     = var.project_name
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_policy" {
-  name = "${var.project_name}-lambda-policy"
+  name = "${var.project_name}-lambda-policy-${random_string.resource_suffix.result}"
   role = aws_iam_role.lambda_role.id
 
   policy = jsonencode({
@@ -191,7 +203,7 @@ data "archive_file" "backend_lambda_zip" {
 # Frontend Lambda function
 resource "aws_lambda_function" "frontend" {
   filename         = data.archive_file.frontend_lambda_zip.output_path
-  function_name    = "${var.project_name}-frontend"
+  function_name    = "${var.project_name}-frontend-${random_string.resource_suffix.result}"
   role            = aws_iam_role.lambda_role.arn
   handler         = "lambda_function.lambda_handler"
   runtime         = "python3.9"
@@ -214,7 +226,7 @@ resource "aws_lambda_function" "frontend" {
 # Backend Lambda function
 resource "aws_lambda_function" "backend" {
   filename         = data.archive_file.backend_lambda_zip.output_path
-  function_name    = "${var.project_name}-backend"
+  function_name    = "${var.project_name}-backend-${random_string.resource_suffix.result}"
   role            = aws_iam_role.lambda_role.arn
   handler         = "lambda_function.lambda_handler"
   runtime         = "python3.9"
@@ -236,7 +248,7 @@ resource "aws_lambda_function" "backend" {
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "poli_notary_api" {
-  name        = "${var.project_name}-api"
+  name        = "${var.project_name}-api-${random_string.resource_suffix.result}"
   description = "API for Poli Notary website"
 
   endpoint_configuration {
